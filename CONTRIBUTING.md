@@ -1,5 +1,7 @@
 # Contributing to DeepResearch on LangGraph
 
+English | [简体中文](CONTRIBUTING.zh-CN.md)
+
 Thanks for your interest in contributing! This project is a LangGraph-based deep
 research agent with a Vue 3 frontend. Issues, PRs, and Discussions are all
 welcome.

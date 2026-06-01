@@ -1,5 +1,7 @@
 # Example report: advanced-search research on a 2026 industry trend
 
+English | [简体中文](02-advanced-search.zh-CN.md)
+
 > **Status:** Stub. Generated as a placeholder for the
 > `examples/` directory. Replace with a real report produced by the agent
 > before publishing v0.3.

@@ -1,5 +1,7 @@
 # Example report: local-LLM research on LangGraph
 
+English | [简体中文](01-local-llm-research.zh-CN.md)
+
 > **Status:** Stub. Generated as a placeholder for the
 > `examples/` directory. Replace with a real report produced by the agent
 > before publishing v0.3.

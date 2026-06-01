@@ -1,5 +1,7 @@
 # Examples
 
+English | [简体中文](README.zh-CN.md)
+
 Real reports produced by the agent. Each entry is a self-contained Markdown
 file that the agent itself generated.
 

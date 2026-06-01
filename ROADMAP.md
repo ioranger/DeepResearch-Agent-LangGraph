@@ -1,5 +1,7 @@
 # Roadmap
 
+English | [简体中文](ROADMAP.zh-CN.md)
+
 This roadmap tracks the public evolution of **DeepResearch on LangGraph**. It
 mirrors internal `.comate/specs/` plans but is intentionally shorter so
 visitors can see direction at a glance.
