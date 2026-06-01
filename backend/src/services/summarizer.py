@@ -13,7 +13,7 @@ from langgraph.config import get_stream_writer
 from config import Configuration
 from llm import build_chat_model
 from models import ResearchTaskState, TodoItem
-from prompts import task_summarizer_instructions
+from prompts import get_prompt
 from services.notes import build_note_guidance
 from services.search import dispatch_search, prepare_research_context
 from services.text_processing import strip_tool_calls
@@ -100,7 +100,7 @@ async def research_node(payload: ResearchTaskState, config: RunnableConfig) -> d
         try:
             async for chunk in llm.astream(
                 [
-                    SystemMessage(content=task_summarizer_instructions.strip()),
+                    SystemMessage(content=get_prompt("task_summarizer_instructions", cfg.locale).strip()),
                     HumanMessage(content=prompt),
                 ]
             ):

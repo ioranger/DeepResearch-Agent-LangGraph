@@ -13,7 +13,7 @@ from langgraph.config import get_stream_writer
 from config import Configuration
 from llm import build_chat_model
 from models import ResearchState
-from prompts import report_writer_instructions
+from prompts import get_prompt
 from services.notes import NoteService
 from services.text_processing import strip_tool_calls
 from utils import strip_thinking_tokens
@@ -76,7 +76,7 @@ def report_node(state: ResearchState, config: RunnableConfig) -> dict:
     try:
         resp = llm.invoke(
             [
-                SystemMessage(content=report_writer_instructions.strip()),
+                SystemMessage(content=get_prompt("report_writer_instructions", cfg.locale).strip()),
                 HumanMessage(content=prompt),
             ]
         )

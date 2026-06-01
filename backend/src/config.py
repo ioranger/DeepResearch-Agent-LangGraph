@@ -111,6 +111,14 @@ class Configuration(BaseModel):
         title="Log Level",
         description="Application log level",
     )
+    locale: str = Field(
+        default="zh-CN",
+        title="Output Locale",
+        description=(
+            "Locale for agent prompts and report output. "
+            "Supported: 'zh-CN' (default), 'en-US'."
+        ),
+    )
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -156,6 +164,7 @@ class Configuration(BaseModel):
             "port": os.getenv("PORT"),
             "cors_origins": os.getenv("CORS_ORIGINS"),
             "log_level": os.getenv("LOG_LEVEL"),
+            "locale": os.getenv("LOCALE"),
         }
 
         for key, value in env_aliases.items():

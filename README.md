@@ -144,6 +144,7 @@ Key variables:
 | `HOST` / `PORT`     | `0.0.0.0` / `8000`   | FastAPI bind address.                                |
 | `CORS_ORIGINS`      | `http://localhost:5173,http://localhost:3000` | Comma-separated allowlist. |
 | `LOG_LEVEL`         | `INFO`               | loguru level.                                        |
+| `LOCALE`            | `zh-CN`              | Agent output locale: `zh-CN` or `en-US`.            |
 
 ---
 
@@ -173,7 +174,7 @@ See [ROADMAP.md](ROADMAP.md) for what's next. Highlights:
 
 - Concurrent backend fan-out in `advanced` search.
 - ReAct agent node so the LLM can pick `note_tool` / `search_tool`.
-- Locale-aware prompts (English / 中文 / 日本語).
+- Locale-aware prompts (`zh-CN` / `en-US`, configurable via `LOCALE`).
 - Stable HTTP runtime API for IDE / web embedding.
 
 ---

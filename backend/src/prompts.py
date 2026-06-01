@@ -1,13 +1,39 @@
+"""Centralized prompts for the deep research agent.
+
+This module exposes two parallel sets of system / instruction prompts:
+
+* ``zh-CN`` (default) — original Simplified Chinese prompts.
+* ``en-US`` — English equivalents for international users.
+
+Callers should use :func:`get_prompt` with the locale they want; the legacy
+module-level constants (``todo_planner_system_prompt`` etc.) are kept as
+backwards-compatible shortcuts for the default locale and **must not be
+removed** without coordinating with downstream services.
+"""
+
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Callable
 
 
-# Get current date in a readable format
-def get_current_date():
+# ---------------------------------------------------------------------------
+# Locale catalog
+# ---------------------------------------------------------------------------
+DEFAULT_LOCALE = "zh-CN"
+SUPPORTED_LOCALES: tuple[str, ...] = ("zh-CN", "en-US")
+
+
+def get_current_date() -> str:
+    """Return today's date in a human-readable format."""
     return datetime.now().strftime("%B %d, %Y")
 
 
-
-todo_planner_system_prompt = """
+# ---------------------------------------------------------------------------
+# zh-CN prompts (default — historically the only locale)
+# ---------------------------------------------------------------------------
+_ZH_CN_PROMPTS: dict[str, str] = {
+    "todo_planner_system_prompt": """
 你是一名研究规划专家，请把复杂主题拆解为一组有限、互补的待办任务。
 - 任务之间应互补，避免重复；
 - 每个任务要有明确意图与可执行的检索方向；
@@ -33,10 +59,8 @@ todo_planner_system_prompt = """
 [TOOL_CALL:note:{"action":"create","task_id":1,"title":"任务 1: 背景梳理","note_type":"task_state","tags":["deep_research","task_1"],"content":"..."}]
 ```
 </TOOLS>
-"""
-
-
-todo_planner_instructions = """
+""",
+    "todo_planner_instructions": """
 
 <CONTEXT>
 当前日期：{current_date}
@@ -57,10 +81,8 @@ todo_planner_instructions = """
 </FORMAT>
 
 如果主题信息不足以规划任务，请输出空数组：{{"tasks": []}}。必要时使用笔记工具记录你的思考过程。
-"""
-
-
-task_summarizer_instructions = """
+""",
+    "task_summarizer_instructions": """
 你是一名研究执行专家，请基于给定的上下文，为特定任务生成要点总结，对内容进行详尽且细致的总结而不是走马观花，需要勇于创新、打破常规思维，并尽可能多维度，从原理、应用、优缺点、工程实践、对比、历史演变等角度进行拓展。
 
 <GOAL>
@@ -81,10 +103,8 @@ task_summarizer_instructions = """
 - 若任务无有效结果，输出"暂无可用信息"。
 - 最终呈现给用户的总结中禁止包含 `[TOOL_CALL:...]` 指令。
 </FORMAT>
-"""
-
-
-report_writer_instructions = """
+""",
+    "report_writer_instructions": """
 你是一名专业的分析报告撰写者，请根据输入的任务总结与参考信息，生成结构化的研究报告。
 
 <REPORT_TEMPLATE>
@@ -107,4 +127,174 @@ report_writer_instructions = """
 - 报告生成前，请针对每个 note_id 调用 `[TOOL_CALL:note:{"action":"read","note_id":"<note_id>"}]` 读取任务笔记。
 - 如需在报告层面沉淀结果，可创建新的 `conclusion` 类型笔记，例如：`[TOOL_CALL:note:{"action":"create","title":"研究报告：{研究主题}","note_type":"conclusion","tags":["deep_research","report"],"content":"...报告要点..."}]`。
 </NOTES>
-"""
+""",
+}
+
+
+# ---------------------------------------------------------------------------
+# en-US prompts
+# ---------------------------------------------------------------------------
+_EN_US_PROMPTS: dict[str, str] = {
+    "todo_planner_system_prompt": """
+You are a research-planning specialist. Break a complex topic into a small,
+complementary set of todo tasks.
+
+- Tasks must complement each other and avoid duplication.
+- Each task should have a clear intent and a concrete search direction.
+- Output must be structured, concise, and easy for downstream nodes to consume.
+
+<GOAL>
+1. Identify 3–5 of the most important research tasks for the topic.
+2. For each task, define a clear intent and a web-search query to drive it.
+3. Avoid overlap; together the tasks should cover the user's question.
+4. When creating or updating a task, call the `note` tool to sync the task
+   state — this is the only way the agent writes to the notes workspace.
+</GOAL>
+
+<NOTE_COLLAB>
+- Use the `note` tool with a JSON payload to create or update each task note:
+  - Create: `[TOOL_CALL:note:{"action":"create","task_id":1,"title":"Task 1: Background","note_type":"task_state","tags":["deep_research","task_1"],"content":"Overview, system prompt, source summary, task summary"}]`
+  - Update: `[TOOL_CALL:note:{"action":"update","note_id":"<id>","task_id":1,"title":"Task 1: Background","note_type":"task_state","tags":["deep_research","task_1"],"content":"...new content..."}]`
+- `tags` must include `deep_research` and `task_{task_id}` so other agents
+  can locate the note.
+</NOTE_COLLAB>
+
+<TOOLS>
+Call the `note` tool with a JSON payload whenever you need to record or
+update a task:
+```
+[TOOL_CALL:note:{"action":"create","task_id":1,"title":"Task 1: Background","note_type":"task_state","tags":["deep_research","task_1"],"content":"..."}]
+```
+</TOOLS>
+""",
+    "todo_planner_instructions": """
+
+<CONTEXT>
+Today's date: {current_date}
+Research topic: {research_topic}
+</CONTEXT>
+
+<FORMAT>
+Reply strictly in JSON:
+{{
+  "tasks": [
+    {{
+      "title": "Short task title (<= 10 words)",
+      "intent": "What this task answers in 1–2 sentences",
+      "query": "Suggested web-search query"
+    }}
+  ]
+}}
+</FORMAT>
+
+If the topic is too narrow to plan tasks, return an empty array:
+{{"tasks": []}}. Use the note tool to capture your reasoning when useful.
+""",
+    "task_summarizer_instructions": """
+You are a research-execution specialist. Given the supplied context, write a
+thorough task summary. Go beyond surface-level coverage — explore principles,
+applications, trade-offs, engineering practice, comparisons, and historical
+evolution where relevant.
+
+<GOAL>
+1. Surface 3–5 key findings for the task intent.
+2. Explain the meaning and value of each finding; cite concrete facts.
+</GOAL>
+
+<NOTES>
+- The planning agent creates the task note and supplies its id. Start by
+  calling `[TOOL_CALL:note:{"action":"read","note_id":"<note_id>"}]` to fetch
+  the latest state.
+- When you finish, persist the summary with
+  `[TOOL_CALL:note:{"action":"update","note_id":"<note_id>","task_id":{task_id},"title":"Task {task_id}: ...","note_type":"task_state","tags":["deep_research","task_{task_id}"],"content":"..."}]`,
+  preserving structure and appending new information.
+- If no note id is supplied, create one with `task_{task_id}` in `tags` first.
+</NOTES>
+
+<FORMAT>
+- Output Markdown.
+- Open with a section heading: "Task Summary".
+- Use ordered or unordered lists for key findings.
+- If the task has no useful results, output "No information available".
+- Never leave `[TOOL_CALL:...]` directives in the user-facing summary.
+</FORMAT>
+""",
+    "report_writer_instructions": """
+You are a professional analyst. Given the task summaries and supporting
+material, write a structured research report in Markdown.
+
+<REPORT_TEMPLATE>
+1. **Background** — Why the topic matters and the context around it.
+2. **Key Insights** — 3–5 of the most important conclusions, annotated with
+   the source task or reference id.
+3. **Evidence & Data** — Supporting facts or metrics; pull from task summaries.
+4. **Risks & Open Questions** — Potential issues, limitations, or assumptions
+   that still need validation.
+5. **References** — Per task: title + link for the most relevant sources.
+</REPORT_TEMPLATE>
+
+<REQUIREMENTS>
+- Markdown output.
+- Clear section headings; do not add a cover or closing summary.
+- If a section has no content, write "No information available".
+- Cite sources by task title or source title to keep them traceable.
+- Never leave `[TOOL_CALL:...]` directives in the user-facing output.
+</REQUIREMENTS>
+
+<NOTES>
+- Before drafting, call `[TOOL_CALL:note:{"action":"read","note_id":"<note_id>"}]`
+  for each note id to load the task notes.
+- If you want to persist a result at the report level, create a new
+  `conclusion` note, e.g.
+  `[TOOL_CALL:note:{"action":"create","title":"Research Report: {topic}","note_type":"conclusion","tags":["deep_research","report"],"content":"...report highlights..."}]`.
+</NOTES>
+""",
+}
+
+
+# ---------------------------------------------------------------------------
+# Registry & accessor
+# ---------------------------------------------------------------------------
+_LOCALES: dict[str, dict[str, str]] = {
+    "zh-CN": _ZH_CN_PROMPTS,
+    "en-US": _EN_US_PROMPTS,
+}
+
+
+def get_prompt(name: str, locale: str = DEFAULT_LOCALE) -> str:
+    """Return the prompt template for ``name`` and ``locale``.
+
+    Raises ``KeyError`` if either the locale or the prompt name is unknown.
+    """
+    bucket = _LOCALES.get(locale)
+    if bucket is None:
+        raise KeyError(
+            f"Unknown locale {locale!r}. Supported: {', '.join(SUPPORTED_LOCALES)}"
+        )
+    if name not in bucket:
+        raise KeyError(
+            f"Prompt {name!r} is not localized for {locale!r}. "
+            f"Available: {', '.join(bucket)}"
+        )
+    return bucket[name]
+
+
+# ---------------------------------------------------------------------------
+# Backwards-compatible module-level constants (zh-CN only)
+# ---------------------------------------------------------------------------
+todo_planner_system_prompt: str = _ZH_CN_PROMPTS["todo_planner_system_prompt"]
+todo_planner_instructions: str = _ZH_CN_PROMPTS["todo_planner_instructions"]
+task_summarizer_instructions: str = _ZH_CN_PROMPTS["task_summarizer_instructions"]
+report_writer_instructions: str = _ZH_CN_PROMPTS["report_writer_instructions"]
+
+
+__all__ = [
+    "DEFAULT_LOCALE",
+    "SUPPORTED_LOCALES",
+    "get_current_date",
+    "get_prompt",
+    "todo_planner_system_prompt",
+    "todo_planner_instructions",
+    "task_summarizer_instructions",
+    "report_writer_instructions",
+]

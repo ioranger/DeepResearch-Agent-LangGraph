@@ -15,8 +15,7 @@ from llm import build_chat_model
 from models import ResearchState, TodoItem
 from prompts import (
     get_current_date,
-    todo_planner_instructions,
-    todo_planner_system_prompt,
+    get_prompt,
 )
 from utils import strip_thinking_tokens
 
@@ -109,7 +108,7 @@ def plan_node(state: ResearchState, config: RunnableConfig) -> dict:
     cfg: Configuration = config["configurable"]["app_config"]
     topic = state.get("research_topic", "") or ""
 
-    prompt = todo_planner_instructions.format(
+    prompt = get_prompt("todo_planner_instructions", cfg.locale).format(
         current_date=get_current_date(),
         research_topic=topic,
     )
@@ -118,7 +117,7 @@ def plan_node(state: ResearchState, config: RunnableConfig) -> dict:
     try:
         response = llm.invoke(
             [
-                SystemMessage(content=todo_planner_system_prompt.strip()),
+                SystemMessage(content=get_prompt("todo_planner_system_prompt", cfg.locale).strip()),
                 HumanMessage(content=prompt),
             ]
         )

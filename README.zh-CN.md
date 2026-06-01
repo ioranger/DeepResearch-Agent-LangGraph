@@ -131,6 +131,7 @@ Ollama 用 profile 控制，默认 stack 保持精简。
 | `HOST` / `PORT`     | `0.0.0.0` / `8000`                          | FastAPI 绑定地址。                                  |
 | `CORS_ORIGINS`      | `http://localhost:5173,http://localhost:3000` | 逗号分隔的 origin 白名单。                        |
 | `LOG_LEVEL`         | `INFO`                                      | loguru 日志级别。                                   |
+| `LOCALE`            | `zh-CN`                                     | Agent 输出语言：`zh-CN` 或 `en-US`。                |
 
 ---
 
@@ -158,7 +159,7 @@ pre-commit 钩子：
 
 - `advanced` 搜索后端并发扇出。
 - ReAct agent 节点，让 LLM 自主选择 `note_tool` / `search_tool`。
-- 提示词本地化（English / 中文 / 日本語）。
+- 提示词本地化（`zh-CN` / `en-US`，通过 `LOCALE` 配置）。
 - 稳定版 HTTP Runtime API，便于嵌入 IDE 和 Web。
 
 ---
