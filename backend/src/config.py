@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class SearchAPI(Enum):
@@ -86,6 +86,42 @@ class Configuration(BaseModel):
         title="LLM Model ID",
         description="Optional model identifier for custom OpenAI-compatible services",
     )
+    llm_timeout: int = Field(
+        default=60,
+        title="LLM Timeout",
+        description="Timeout in seconds for LLM requests",
+    )
+    host: str = Field(
+        default="0.0.0.0",
+        title="Server Host",
+        description="Host address for the FastAPI server",
+    )
+    port: int = Field(
+        default=8000,
+        title="Server Port",
+        description="Port for the FastAPI server",
+    )
+    cors_origins: list[str] = Field(
+        default_factory=lambda: ["*"],
+        title="CORS Origins",
+        description="Allowed CORS origins",
+    )
+    log_level: str = Field(
+        default="INFO",
+        title="Log Level",
+        description="Application log level",
+    )
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, value: Any) -> list[str] | Any:
+        """Parse comma-separated CORS origins from environment variables."""
+        if value is None:
+            return ["*"]
+        if isinstance(value, str):
+            items = [item.strip() for item in value.split(",") if item.strip()]
+            return items or ["*"]
+        return value
 
     @classmethod
     def from_env(cls, overrides: Optional[dict[str, Any]] = None) -> "Configuration":
@@ -115,6 +151,11 @@ class Configuration(BaseModel):
             "search_api": os.getenv("SEARCH_API"),
             "enable_notes": os.getenv("ENABLE_NOTES"),
             "notes_workspace": os.getenv("NOTES_WORKSPACE"),
+            "llm_timeout": os.getenv("LLM_TIMEOUT"),
+            "host": os.getenv("HOST"),
+            "port": os.getenv("PORT"),
+            "cors_origins": os.getenv("CORS_ORIGINS"),
+            "log_level": os.getenv("LOG_LEVEL"),
         }
 
         for key, value in env_aliases.items():

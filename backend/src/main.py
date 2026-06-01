@@ -21,10 +21,12 @@ from pydantic import BaseModel, Field
 from config import Configuration, SearchAPI
 from agent import DeepResearchAgent
 
+startup_config = Configuration.from_env()
+
 # 添加控制台日志处理程序
 logger.add(
     sys.stderr,
-    level="INFO",
+    level=startup_config.log_level.upper(),
     format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <4}</level> | <cyan>using_function:{function}</cyan> | <cyan>{file}:{line}</cyan> | <level>{message}</level>",
     colorize=True,
 )
@@ -82,11 +84,12 @@ def _build_config(payload: ResearchRequest) -> Configuration:
 
 
 def create_app() -> FastAPI:
+    config = Configuration.from_env()
     app = FastAPI(title="DeepResearch (LangGraph)")
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=config.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -187,10 +190,11 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
 
+    config = Configuration.from_env()
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
+        host=config.host,
+        port=config.port,
         reload=True,
-        log_level="info"
+        log_level=config.log_level.lower(),
     )

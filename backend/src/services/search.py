@@ -42,6 +42,7 @@ def dispatch_search(
         "duckduckgo": _search_ddg,
         "searxng": _search_searxng,
         "perplexity": _search_perplexity,
+        "advanced": _search_advanced,
     }
     handler = handlers.get(backend, _search_ddg)
 
@@ -91,6 +92,37 @@ def prepare_research_context(
 # ----------------------------------------------------------------------
 # Backend implementations
 # ----------------------------------------------------------------------
+def _search_advanced(query: str, config: Configuration) -> dict[str, Any]:
+    handlers = [_search_tavily, _search_ddg, _search_searxng, _search_perplexity]
+    results: list[dict[str, Any]] = []
+    notices: list[str] = []
+    answers: list[str] = []
+
+    for handler in handlers:
+        try:
+            payload = handler(query, config)
+        except Exception as exc:  # pragma: no cover - per-backend isolation
+            logger.exception("Advanced search handler %s failed: %s", handler.__name__, exc)
+            notices.append(f"搜索后端 {handler.__name__} 异常: {exc}")
+            continue
+
+        results.extend(payload.get("results") or [])
+        notices.extend(payload.get("notices") or [])
+        answer = payload.get("answer")
+        if answer:
+            answers.append(str(answer))
+
+    if not results:
+        notices.append("Advanced 搜索未返回任何结果")
+
+    return {
+        "results": results,
+        "backend": "advanced",
+        "answer": "\n\n".join(answers) or None,
+        "notices": notices,
+    }
+
+
 def _search_tavily(query: str, config: Configuration) -> dict[str, Any]:
     api_key = os.getenv("TAVILY_API_KEY")
     if not api_key:
