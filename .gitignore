@@ -20,6 +20,7 @@ dist/
 .DS_Store
 
 backend/notes_workspace/
+backend/data/
 backend/.coverage
 .pytest_cache/
 .mypy_cache/
@@ -27,3 +28,4 @@ backend/.coverage
 
 .comate-engine/
 examples/real-output/
+coding-practice.html

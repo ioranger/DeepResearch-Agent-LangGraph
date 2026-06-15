@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from enum import Enum
 from typing import Any, Optional
@@ -42,9 +43,9 @@ class Configuration(BaseModel):
         description="Whether to store task progress in NoteTool",
     )
     notes_workspace: str = Field(
-        default="./notes",
+        default="backend/data/notes",
         title="Notes Workspace",
-        description="Directory for NoteTool to persist task notes",
+        description="Directory for NoteTool to persist task notes (outside src/)",
     )
     fetch_full_page: bool = Field(
         default=True,

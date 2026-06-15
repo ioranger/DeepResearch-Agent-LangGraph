@@ -111,19 +111,21 @@ async def stream_research_events(
                                 "step": channel_map.get(t.id, {}).get("step"),
                             }
 
-                    # Report / persist updates need no extra mapping; persist
+                    # Report node completed → capture structured_report incrementally
+                    if node_name == "report":
+                        report_text = node_output.get("structured_report")
+                        if report_text:
+                            final_state["structured_report"] = report_text
+
+                    # Persist updates need no extra mapping; persist
                     # already pushed `report_note` via custom stream.
     except Exception as exc:
-        logger.exception("Streaming research failed: %s", exc)
-        yield {"type": "status", "message": f"流式执行异常：{exc}"}
+        logger.exception("Streaming research failed during streaming: %s", exc)
+        yield {"type": "error", "code": "STREAM_FAILED", "detail": str(exc)}
+        yield {"type": "done"}
+        return
 
-    # Ensure we have a final snapshot if "values" mode wasn't last
-    if not final_state:
-        try:
-            final_state = await graph.ainvoke(inputs, config=runnable_config)
-        except Exception:
-            final_state = {}
-
+    # Build final report from incremental updates (no secondary graph.ainvoke!)
     report = final_state.get("structured_report") or ""
     yield {
         "type": "final_report",

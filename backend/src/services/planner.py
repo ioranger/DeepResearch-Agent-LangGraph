@@ -12,7 +12,7 @@ from langchain_core.runnables import RunnableConfig
 
 from config import Configuration
 from llm import build_chat_model
-from models import ResearchState, TodoItem
+from models import PlannerTaskItem, ResearchState, TaskPlan, TodoItem
 from prompts import (
     get_current_date,
     get_prompt,
@@ -104,7 +104,11 @@ def create_fallback_task(research_topic: str) -> TodoItem:
 # Node entry
 # ----------------------------------------------------------------------
 def plan_node(state: ResearchState, config: RunnableConfig) -> dict:
-    """LangGraph node: ask LLM to decompose research_topic into TodoItems."""
+    """LangGraph node: ask LLM to decompose research_topic into TodoItems.
+
+    Tries structured output (``with_structured_output(TaskPlan)``) first;
+    falls back to manual JSON extraction if the provider doesn't support it.
+    """
     cfg: Configuration = config["configurable"]["app_config"]
     topic = state.get("research_topic", "") or ""
 
@@ -114,6 +118,35 @@ def plan_node(state: ResearchState, config: RunnableConfig) -> dict:
     )
 
     llm = build_chat_model(cfg)
+
+    # ------------------------------------------------------------------
+    # Path 1: Structured output (preferred)
+    # ------------------------------------------------------------------
+    try:
+        structured_llm = llm.with_structured_output(TaskPlan)
+        plan: TaskPlan = structured_llm.invoke(
+            [
+                SystemMessage(content=get_prompt("todo_planner_system_prompt", cfg.locale).strip()),
+                HumanMessage(content=prompt),
+            ]
+        )
+        if plan and plan.tasks:
+            todo_items: list[TodoItem] = []
+            for idx, item in enumerate(plan.tasks, start=1):
+                title = str(item.title or f"任务{idx}").strip()
+                intent = str(item.intent or "聚焦主题的关键问题").strip()
+                query = str(item.query or topic).strip() or topic
+                todo_items.append(TodoItem(id=idx, title=title, intent=intent, query=query))
+            logger.info("Planner (structured) produced %d tasks: %s", len(todo_items), [t.title for t in todo_items])
+            return {"todo_items": todo_items}
+    except (NotImplementedError, TypeError, ValueError) as exc:
+        logger.info("Structured output not supported (%s); falling back to manual parse", exc)
+    except Exception as exc:
+        logger.warning("Structured output failed (%s); falling back to manual parse", exc)
+
+    # ------------------------------------------------------------------
+    # Path 2: Manual parse (fallback)
+    # ------------------------------------------------------------------
     try:
         response = llm.invoke(
             [
@@ -129,7 +162,7 @@ def plan_node(state: ResearchState, config: RunnableConfig) -> dict:
     logger.info("Planner raw output (truncated): %s", raw[:500])
     tasks_payload = _extract_tasks(raw, strip_thinking=cfg.strip_thinking_tokens)
 
-    todo_items: List[TodoItem] = []
+    todo_items = []
     for idx, item in enumerate(tasks_payload, start=1):
         title = str(item.get("title") or f"任务{idx}").strip()
         intent = str(item.get("intent") or "聚焦主题的关键问题").strip()
@@ -140,5 +173,5 @@ def plan_node(state: ResearchState, config: RunnableConfig) -> dict:
         logger.warning("Planner produced no tasks; using fallback")
         todo_items = [create_fallback_task(topic)]
 
-    logger.info("Planner produced %d tasks: %s", len(todo_items), [t.title for t in todo_items])
+    logger.info("Planner (manual) produced %d tasks: %s", len(todo_items), [t.title for t in todo_items])
     return {"todo_items": todo_items}

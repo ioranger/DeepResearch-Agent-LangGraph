@@ -76,17 +76,31 @@ def prepare_research_context(
     search_result: dict[str, Any] | None,
     answer_text: Optional[str],
     config: Configuration,
-) -> tuple[str, str]:
-    """Build structured context and source summary for downstream agents."""
-    sources_summary = format_sources(search_result)
-    context = deduplicate_and_format_sources(
-        search_result or {"results": []},
-        max_tokens_per_source=MAX_TOKENS_PER_SOURCE,
-        fetch_full_page=config.fetch_full_page,
-    )
+) -> tuple[list[dict[str, Any]], str]:
+    """Build numbered context and structured source list for citation binding.
+
+    Returns (sources_list, formatted_context) where sources_list is a list of
+    ``[{id, title, url, snippet}, ...]`` and formatted_context prefixes each
+    result with ``[n]`` markers.
+    """
+    results = (search_result or {}).get("results") or []
+    sources_list: list[dict[str, Any]] = []
+
+    context_parts: list[str] = []
     if answer_text:
-        context = f"AI直接答案：\n{answer_text}\n\n{context}"
-    return sources_summary, context
+        context_parts.append(f"AI直接答案：\n{answer_text}")
+
+    for i, r in enumerate(results, start=1):
+        title = r.get("title") or ""
+        url = r.get("url") or ""
+        snippet = (r.get("content") or r.get("raw_content") or "")[:MAX_TOKENS_PER_SOURCE]
+        sources_list.append({"id": i, "title": title, "url": url, "snippet": snippet[:200]})
+        context_parts.append(
+            f"[{i}] {title}\n    URL: {url}\n    摘录: {snippet}"
+        )
+
+    formatted_context = "\n\n".join(context_parts) if context_parts else "暂无搜索结果"
+    return sources_list, formatted_context
 
 
 # ----------------------------------------------------------------------

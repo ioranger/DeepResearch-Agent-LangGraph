@@ -29,12 +29,14 @@ def build_report_prompt(state: ResearchState) -> str:
     tasks_block = []
     for task in todo_items:
         summary_block = task.summary or "暂无可用信息"
+        citations_str = ", ".join(str(c) for c in (task.citations or [])) if task.citations else "无"
         sources_block = task.sources_summary or "暂无来源"
         tasks_block.append(
             f"### 任务 {task.id}: {task.title}\n"
             f"- 任务目标：{task.intent}\n"
             f"- 检索查询：{task.query}\n"
             f"- 执行状态：{task.status}\n"
+            f"- 引用编号：{citations_str}\n"
             f"- 任务总结：\n{summary_block}\n"
             f"- 来源概览：\n{sources_block}\n"
         )
@@ -67,6 +69,107 @@ def build_report_prompt(state: ResearchState) -> str:
     )
 
 
+def _build_references_section(state: ResearchState) -> str:
+    """Collect all unique citations across tasks and format a References section."""
+    todo_items = state.get("todo_items") or []
+    refs: dict[int, str] = {}
+    for task in todo_items:
+        if not task.sources_summary:
+            continue
+        for line in task.sources_summary.split("\n"):
+            line = line.strip()
+            if line.startswith("[") and "] " in line:
+                try:
+                    id_end = line.index("]")
+                    ref_id = int(line[1:id_end])
+                    if ref_id not in refs:
+                        refs[ref_id] = line
+                except (ValueError, IndexError):
+                    pass
+    if not refs:
+        return ""
+    lines = ["\n## 参考来源\n"]
+    for rid in sorted(refs):
+        lines.append(refs[rid])
+    return "\n".join(lines)
+
+
+def generate_section_markdown(
+    task,
+    research_topic: str,
+    cfg: Configuration,
+) -> str:
+    """Generate a single section from one task's summary and sources."""
+    llm = build_chat_model(cfg)
+    prompt = (
+        f"研究主题：{research_topic}\n"
+        f"任务标题：{task.title}\n"
+        f"任务意图：{task.intent}\n"
+        f"任务总结：\n{task.summary or '暂无可用信息'}\n"
+        f"来源列表：\n{task.sources_summary or '暂无来源'}\n\n"
+        f"引用指令：\n{get_prompt('citation_directive', cfg.locale)}\n\n"
+        f"请撰写该任务的报告章节。"
+    )
+    try:
+        resp = llm.invoke(
+            [
+                SystemMessage(content=get_prompt("section_writer_instructions", cfg.locale).strip()),
+                HumanMessage(content=prompt),
+            ]
+        )
+        raw = getattr(resp, "content", "") or ""
+    except Exception as exc:
+        logger.warning("Section generation failed for task %s: %s", task.id, exc)
+        # fallback: just paste the summary as a section
+        return f"## {task.title}\n\n{task.summary or '暂无可用信息'}"
+
+    section = raw.strip()
+    if cfg.strip_thinking_tokens:
+        section = strip_thinking_tokens(section)
+    section = strip_tool_calls(section).strip()
+    return section or f"## {task.title}\n\n{task.summary or '暂无可用信息'}"
+
+
+def _build_report_via_sections(state: ResearchState, cfg: Configuration) -> str | None:
+    """Try section-by-section generation; returns None on failure so caller can fall back."""
+    todo_items = state.get("todo_items") or []
+    research_topic = state.get("research_topic", "") or ""
+    if len(todo_items) <= 1:
+        return None  # Single task — use unified generation
+
+    sections: list[str] = []
+    for task in todo_items:
+        section = generate_section_markdown(task, research_topic, cfg)
+        sections.append(section)
+
+    body = "\n\n".join(sections)
+
+    # Stitch with an overarching intro
+    llm = build_chat_model(cfg)
+    stitch_prompt = (
+        f"研究主题：{research_topic}\n\n"
+        f"以下是各任务独立撰写的报告章节：\n\n{body}\n\n"
+        f"请添加一个简短的报告标题（# 标题）和背景概述段落，然后将各章节整合为完整的 Markdown 报告。"
+        f"保持各章节的引用标注 [n] 不变。"
+    )
+    try:
+        resp = llm.invoke(
+            [
+                SystemMessage(content=get_prompt("report_writer_instructions", cfg.locale).strip()),
+                HumanMessage(content=stitch_prompt),
+            ]
+        )
+        raw = getattr(resp, "content", "") or ""
+    except Exception as exc:
+        logger.warning("Section stitching failed: %s", exc)
+        return f"# 研究报告：{research_topic}\n\n{body}"
+
+    stitched = raw.strip()
+    if cfg.strip_thinking_tokens:
+        stitched = strip_thinking_tokens(stitched)
+    stitched = strip_tool_calls(stitched).strip()
+    return stitched or f"# 研究报告：{research_topic}\n\n{body}"
+
 def report_node(state: ResearchState, config: RunnableConfig) -> dict:
     """Synchronous LLM call producing the final structured report."""
     cfg: Configuration = config["configurable"]["app_config"]
@@ -86,9 +189,20 @@ def report_node(state: ResearchState, config: RunnableConfig) -> dict:
         return {"structured_report": f"报告生成失败：{exc}"}
 
     text = raw.strip()
+
+    # Try section-by-section generation for multi-task reports
+    section_report = _build_report_via_sections(state, cfg)
+    if section_report:
+        text = section_report
+
     if cfg.strip_thinking_tokens:
         text = strip_thinking_tokens(text)
     text = strip_tool_calls(text).strip() or "报告生成失败，请检查输入。"
+
+    # Append global references
+    refs = _build_references_section(state)
+    if refs:
+        text += "\n" + refs
 
     return {"structured_report": text}
 

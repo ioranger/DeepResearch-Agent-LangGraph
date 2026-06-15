@@ -64,12 +64,10 @@ class DeepResearchAgent:
         self.graph = build_graph(self.config)
 
     # ------------------------------------------------------------------
-    # Synchronous API
+    # Public async API (preferred for FastAPI)
     # ------------------------------------------------------------------
-    def run(self, topic: str) -> SummaryStateOutput:
-        return asyncio.run(self._run_async(topic))
-
-    async def _run_async(self, topic: str) -> SummaryStateOutput:
+    async def arun(self, topic: str) -> SummaryStateOutput:
+        """Run the full research pipeline asynchronously."""
         runnable_config = {"configurable": {"app_config": self.config}}
         final_state = await self.graph.ainvoke(
             {"research_topic": topic},
@@ -82,6 +80,17 @@ class DeepResearchAgent:
             report_markdown=report,
             todo_items=todo_items,
         )
+
+    # ------------------------------------------------------------------
+    # Synchronous API
+    # ------------------------------------------------------------------
+    def run(self, topic: str) -> SummaryStateOutput:
+        """Sync façade for CLI / scripts."""
+        return asyncio.run(self.arun(topic))
+
+    async def _run_async(self, topic: str) -> SummaryStateOutput:
+        """Deprecated: kept for backwards compatibility. Use arun directly."""
+        return await self.arun(topic)
 
     # ------------------------------------------------------------------
     # Streaming API

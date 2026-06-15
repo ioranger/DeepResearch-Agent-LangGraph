@@ -104,6 +104,47 @@ _ZH_CN_PROMPTS: dict[str, str] = {
 - 最终呈现给用户的总结中禁止包含 `[TOOL_CALL:...]` 指令。
 </FORMAT>
 """,
+
+    "reflection_evaluator": """
+你是一名严谨的研究评审专家。请基于已积累的研究上下文与当前总结，评估信息是否足够充分。
+
+<EVALUATION_CRITERIA>
+1. 是否覆盖了任务意图的核心维度？
+2. 是否有具体的证据、数据、或可引用的来源支撑？
+3. 是否存在明显的知识缺口或尚待验证的假设？
+4. 多维度（原理、应用、对比、演进等）是否已有足够展开？
+</EVALUATION_CRITERIA>
+
+<OUTPUT_FORMAT>
+严格输出 JSON：
+{{
+  "is_sufficient": true/false,
+  "follow_up_query": "如果不充分，建议的追加检索关键词（充分时可为空）",
+  "reasoning": "1-2 句评估理由"
+}}
+</OUTPUT_FORMAT>
+""",
+    "citation_directive": """
+<CITATION_RULES>
+1. 每条搜索结果编号为 [1]、[2]、[3]...，引用时必须使用对应编号；
+2. 当你引用某个来源的具体信息或数据时，在句末标注 [n]；
+3. 多个来源同时引用时使用 [1][3] 格式；
+4. 你最终的总结应呈现为：「要点内容 [1]」「另一要点 [2]」等可追溯形式。
+</CITATION_RULES>
+""",
+
+    "section_writer_instructions": """
+你是一名研究报告分节撰写专家。请基于单个任务的总结和来源，撰写报告的一个章节。
+
+<REQUIREMENTS>
+1. 以 "## {任务标题}" 作为章节标题；
+2. 整合任务总结中的要点，扩展为连贯的叙述段落；
+3. 引用具体来源时使用 [n] 标注；
+4. 每个章节 2-4 段，简明有力；
+5. 只输出该章节内容，不要添加报告总标题或结语。
+</REQUIREMENTS>
+""",
+
     "report_writer_instructions": """
 你是一名专业的分析报告撰写者，请根据输入的任务总结与参考信息，生成结构化的研究报告。
 
@@ -219,6 +260,50 @@ evolution where relevant.
 - Never leave `[TOOL_CALL:...]` directives in the user-facing summary.
 </FORMAT>
 """,
+
+    "reflection_evaluator": """
+You are a rigorous research reviewer. Based on the accumulated research context
+and the current summary, evaluate whether the information gathered is sufficient.
+
+<EVALUATION_CRITERIA>
+1. Does it cover the core dimensions of the task intent?
+2. Is there concrete evidence, data, or citable sources?
+3. Are there obvious knowledge gaps or unverified assumptions?
+4. Have multiple dimensions (principles, applications, comparisons, evolution)
+   been sufficiently explored?
+</EVALUATION_CRITERIA>
+
+<OUTPUT_FORMAT>
+Output strictly as JSON:
+{{
+  "is_sufficient": true/false,
+  "follow_up_query": "If not sufficient, suggested follow-up search query (empty if sufficient)",
+  "reasoning": "1-2 sentence evaluation rationale"
+}}
+</OUTPUT_FORMAT>
+""",
+    "citation_directive": """
+<CITATION_RULES>
+1. Each search result is numbered [1], [2], [3]...; you MUST use these numbers when citing.
+2. When you reference specific information or data from a source, append [n] at the end of the sentence.
+3. When citing multiple sources simultaneously, use [1][3] format.
+4. Your final summary should present findings as: "Key point [1]" "Another point [2]" – fully traceable.
+</CITATION_RULES>
+""",
+
+    "section_writer_instructions": """
+You are a report section writer. Based on a single task's summary and sources,
+write one section of the research report.
+
+<REQUIREMENTS>
+1. Use "## {task title}" as the section heading.
+2. Expand the task summary's key points into coherent narrative paragraphs.
+3. Use [n] citations when referencing specific sources.
+4. Write 2-4 concise, impactful paragraphs per section.
+5. Output only the section content — no report title or closing.
+</REQUIREMENTS>
+""",
+
     "report_writer_instructions": """
 You are a professional analyst. Given the task summaries and supporting
 material, write a structured research report in Markdown.

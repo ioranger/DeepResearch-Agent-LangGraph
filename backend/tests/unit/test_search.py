@@ -48,3 +48,34 @@ def test_advanced_search_aggregates_backend_results(monkeypatch) -> None:
     assert "ddg notice" in notices
     assert "perplexity notice" in notices
     assert any("searxng unavailable" in notice for notice in notices)
+
+
+def test_prepare_research_context_returns_numbered_sources() -> None:
+    """prepare_research_context now returns (list[dict], str) with [n] numbering."""
+    search_result = {
+        "results": [
+            {"title": "Source A", "url": "https://a.com", "content": "Content A"},
+            {"title": "Source B", "url": "https://b.com", "content": "Content B"},
+        ],
+    }
+    config = Configuration()
+    sources_list, context = search.prepare_research_context(search_result, None, config)
+
+    assert isinstance(sources_list, list)
+    assert len(sources_list) == 2
+    assert sources_list[0]["id"] == 1
+    assert sources_list[0]["title"] == "Source A"
+    assert sources_list[1]["id"] == 2
+    assert "[1]" in context
+    assert "[2]" in context
+    assert "Source A" in context
+    assert "Source B" in context
+
+
+def test_prepare_research_context_empty_results() -> None:
+    """Empty results should still return valid types."""
+    config = Configuration()
+    sources_list, context = search.prepare_research_context({"results": []}, None, config)
+    assert isinstance(sources_list, list)
+    assert len(sources_list) == 0
+    assert "暂无" in context or "no results" in context.lower() or "暂无搜索结果" in context

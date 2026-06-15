@@ -19,12 +19,30 @@ class TodoItem(BaseModel):
     status: str = "pending"
     summary: Optional[str] = None
     sources_summary: Optional[str] = None
+    citations: List[int] = Field(default_factory=list)
     notices: List[str] = Field(default_factory=list)
     note_id: Optional[str] = None
     note_path: Optional[str] = None
     stream_token: Optional[str] = None
 
     model_config = {"arbitrary_types_allowed": True}
+
+
+class PlannerTaskItem(BaseModel):
+    """Planner output item for structured output."""
+
+    title: str = Field(..., description="Short task title (<= 10 words)")
+    intent: str = Field(..., description="What this task answers in 1-2 sentences")
+    query: str = Field(..., description="Suggested web-search query")
+
+
+class TaskPlan(BaseModel):
+    """Structured output from the planner node."""
+
+    tasks: list[PlannerTaskItem] = Field(
+        default_factory=list,
+        description="List of planned research tasks (3-5 items)",
+    )
 
 
 def merge_todos(left: List[TodoItem], right: List[TodoItem]) -> List[TodoItem]:
