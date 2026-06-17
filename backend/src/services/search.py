@@ -6,8 +6,8 @@ import logging
 import os
 from typing import Any, Optional, Tuple
 
-from config import Configuration, SearchAPI
-from utils import (
+from src.config import Configuration, SearchAPI
+from src.utils import (
     deduplicate_and_format_sources,
     format_sources,
     get_config_value,

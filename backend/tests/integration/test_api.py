@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from main import create_app
+from src.main import create_app
 
 
 def test_healthz() -> None:
@@ -37,7 +37,7 @@ def test_research_stream_sse_protocol(monkeypatch) -> None:
         yield {"type": "final_report", "report": "测试报告"}
         yield {"type": "done"}
 
-    monkeypatch.setattr("agent.DeepResearchAgent.run_stream", fake_run_stream)
+    monkeypatch.setattr("src.agent.DeepResearchAgent.run_stream", fake_run_stream)
 
     client = TestClient(create_app())
     response = client.post(

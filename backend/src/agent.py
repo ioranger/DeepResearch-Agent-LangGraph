@@ -14,12 +14,12 @@ from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 from langgraph.types import Send
 
-from config import Configuration
-from models import ResearchState, SummaryStateOutput, TodoItem
-from services.event_adapter import stream_research_events
-from services.planner import plan_node
-from services.reporter import persist_node, report_node
-from services.summarizer import research_node
+from src.config import Configuration
+from src.models import ResearchState, SummaryStateOutput, TodoItem
+from src.services.event_adapter import stream_research_events
+from src.services.planner import plan_node
+from src.services.reporter import persist_node, report_node
+from src.services.summarizer import research_node
 
 logger = logging.getLogger(__name__)
 

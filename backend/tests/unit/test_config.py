@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from config import Configuration, SearchAPI
+from src.config import Configuration, SearchAPI
 
 
 def test_config_override_search_api() -> None:

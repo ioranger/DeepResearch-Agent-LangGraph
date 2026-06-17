@@ -16,14 +16,14 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.config import get_stream_writer
 
-from config import Configuration
-from llm import build_chat_model
-from models import TodoItem
-from prompts import get_prompt
-from services.notes import build_note_guidance
-from services.text_processing import filter_relevant_snippets, strip_tool_calls
-from services.search import dispatch_search, prepare_research_context
-from utils import strip_thinking_tokens
+from src.config import Configuration
+from src.llm import build_chat_model
+from src.models import TodoItem
+from src.prompts import get_prompt
+from src.services.notes import build_note_guidance
+from src.services.text_processing import filter_relevant_snippets, strip_tool_calls
+from src.services.search import dispatch_search, prepare_research_context
+from src.utils import strip_thinking_tokens
 
 logger = logging.getLogger(__name__)
 

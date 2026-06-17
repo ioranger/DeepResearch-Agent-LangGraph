@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from config import Configuration
-from models import ResearchState
+from src.config import Configuration
+from src.models import ResearchState
 
 
 # ---------------------------------------------------------------------------
@@ -35,7 +35,7 @@ class _StructuredLLM:
 
     def invoke(self, messages):
         # Return a TaskPlan-like object
-        from models import PlannerTaskItem, TaskPlan
+        from src.models import PlannerTaskItem, TaskPlan
         import json
         try:
             data = json.loads(self._content)
@@ -53,7 +53,7 @@ class _StructuredLLM:
 # ---------------------------------------------------------------------------
 def test_plan_node_structured_output(monkeypatch: pytest.MonkeyPatch) -> None:
     """When structured output is supported, TaskPlan path is used."""
-    from services.planner import plan_node
+    from src.services.planner import plan_node
 
     payload = '{"tasks": [{"title": "背景梳理", "intent": "了解背景", "query": "test background"}]}'
     monkeypatch.setattr(
@@ -72,7 +72,7 @@ def test_plan_node_structured_output(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_plan_node_fallback_on_unsupported(monkeypatch: pytest.MonkeyPatch) -> None:
     """When with_structured_output raises NotImplementedError, fallback to manual parse."""
-    from services.planner import plan_node
+    from src.services.planner import plan_node
 
     # Provide a raw JSON string that manual parser can handle
     raw_json = '{"tasks": [{"title": "手动解析任务", "intent": "测试回退", "query": "fallback query"}]}'
@@ -91,7 +91,7 @@ def test_plan_node_fallback_on_unsupported(monkeypatch: pytest.MonkeyPatch) -> N
 
 def test_plan_node_creates_fallback_when_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     """When both paths produce empty results, a fallback task is created."""
-    from services.planner import plan_node
+    from src.services.planner import plan_node
 
     monkeypatch.setattr(
         "services.planner.build_chat_model",

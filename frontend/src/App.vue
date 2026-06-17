@@ -37,6 +37,7 @@
 </template>
 
 <script lang="ts" setup>
+import { onBeforeUnmount } from "vue";
 import { useResearchStream } from "./composables/useResearchStream";
 import TopicInput from "./components/TopicInput.vue";
 import TaskList from "./components/TaskList.vue";
@@ -53,4 +54,8 @@ const {
   goBack,
   startNewResearch
 } = useResearchStream();
+
+onBeforeUnmount(() => {
+  cancelResearch();
+});
 </script>

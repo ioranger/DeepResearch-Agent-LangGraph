@@ -10,13 +10,13 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.config import get_stream_writer
 
-from config import Configuration
-from llm import build_chat_model
-from models import ResearchState
-from prompts import get_prompt
-from services.notes import NoteService
-from services.text_processing import strip_tool_calls
-from utils import strip_thinking_tokens
+from src.config import Configuration
+from src.llm import build_chat_model
+from src.models import ResearchState
+from src.prompts import get_prompt
+from src.services.notes import NoteService
+from src.services.text_processing import strip_tool_calls
+from src.utils import strip_thinking_tokens
 
 logger = logging.getLogger(__name__)
 

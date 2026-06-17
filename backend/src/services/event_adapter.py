@@ -10,8 +10,8 @@ from __future__ import annotations
 import logging
 from typing import Any, AsyncIterator
 
-from config import Configuration
-from models import TodoItem
+from src.config import Configuration
+from src.models import TodoItem
 
 logger = logging.getLogger(__name__)
 

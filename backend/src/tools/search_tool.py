@@ -7,8 +7,8 @@ from typing import Any, Type
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 
-from config import Configuration
-from services.search import dispatch_search
+from src.config import Configuration
+from src.services.search import dispatch_search
 
 
 class SearchToolInput(BaseModel):

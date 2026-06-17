@@ -7,7 +7,7 @@ from typing import Any, List, Optional, Type
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 
-from services.notes import NoteService
+from src.services.notes import NoteService
 
 
 class NoteToolInput(BaseModel):

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from config import Configuration
-from models import ResearchState, TodoItem
-from services.reporter import _build_references_section, build_report_prompt
+from src.config import Configuration
+from src.models import ResearchState, TodoItem
+from src.services.reporter import _build_references_section, build_report_prompt
 
 
 def test_build_references_section_collects_unique_citations() -> None:

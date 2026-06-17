@@ -6,7 +6,7 @@ import logging
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from config import Configuration
+from src.config import Configuration
 
 logger = logging.getLogger(__name__)
 

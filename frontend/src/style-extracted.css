@@ -86,7 +86,7 @@
   border: 1px solid rgba(148, 163, 184, 0.18);
   box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
   backdrop-filter: blur(8px);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .panel-form {
@@ -701,8 +701,8 @@ select:focus {
   padding: 16px;
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.35);
-  overflow: auto;
-  max-height: 420px;
+  overflow: visible;
+  max-height: none;
   scrollbar-width: thin;
   scrollbar-color: rgba(129, 140, 248, 0.6) rgba(226, 232, 240, 0.7);
 }
@@ -727,7 +727,7 @@ select:focus {
 
 .summary-block .block-pre,
 .sources-block .block-pre {
-  max-height: 360px;
+  max-height: none;
 }
 
 
@@ -946,9 +946,13 @@ select:focus {
 
 .source-item {
   position: relative;
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.72);
 }
 
 .source-link {
@@ -967,6 +971,38 @@ select:focus {
 
 .source-link:hover {
   color: #0f172a;
+}
+
+.source-snippet,
+.source-placeholder,
+.report-placeholder {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.report-content {
+  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.8;
+  word-break: break-word;
+  overflow: visible;
+  max-height: none;
+}
+
+.report-content h1,
+.report-content h2,
+.report-content h3 {
+  margin: 20px 0 10px;
+}
+
+.report-content p,
+.report-content ul,
+.report-content ol {
+  margin: 0 0 12px;
 }
 
 .source-tooltip {
@@ -1280,7 +1316,17 @@ select:focus {
   border-radius: 0;
   border: none;
   overflow-y: auto;
+  overflow-x: hidden;
   max-width: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-fullscreen .panel-result .source-panel,
+.layout-fullscreen .panel-result .report-view {
+  overflow: visible;
+  max-height: none;
+  flex-shrink: 0;
 }
 
 @media (max-width: 1024px) {

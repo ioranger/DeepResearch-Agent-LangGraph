@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from config import Configuration, SearchAPI
-from services import search
+from src.config import Configuration, SearchAPI
+from src.services import search
 
 
 def test_advanced_search_aggregates_backend_results(monkeypatch) -> None:

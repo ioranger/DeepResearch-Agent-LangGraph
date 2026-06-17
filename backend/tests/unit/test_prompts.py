@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from config import Configuration
-from prompts import (
+from src.config import Configuration
+from src.prompts import (
     DEFAULT_LOCALE,
     SUPPORTED_LOCALES,
     get_prompt,

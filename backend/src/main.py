@@ -19,8 +19,8 @@ from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from config import Configuration, SearchAPI
-from agent import DeepResearchAgent
+from src.config import Configuration, SearchAPI
+from src.agent import DeepResearchAgent
 
 # ---------------------------------------------------------------------------
 # Single shared configuration – constructed once, used everywhere

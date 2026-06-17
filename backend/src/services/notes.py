@@ -14,7 +14,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, Iterable, Optional
 
-from models import TodoItem
+from src.models import TodoItem
 
 logger = logging.getLogger(__name__)
 

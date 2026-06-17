@@ -1,33 +1,23 @@
-# Quality Foundation Harness 实施任务计划
+# Quality Foundation Harness 任务拆解
 
-- [x] Task 1: 更新后端测试依赖配置
-    - 1.1: 在 `backend/pyproject.toml` 的 optional dev 依赖中加入 `pytest`、`pytest-asyncio`、`httpx`
-    - 1.2: 在 `backend/pyproject.toml` 的 dependency group dev 中同步加入测试依赖
-    - 1.3: 保持现有 `ruff`、`mypy` 配置不变
+- [x] Task 1: 补充测试依赖与配置模型扩展
+    - 1.1: 更新 `backend/pyproject.toml`，在 dev 依赖中加入 `pytest`、`pytest-asyncio`、`httpx`
+    - 1.2: 修改 `backend/src/config.py`，向 `Configuration` 模型中补充 `host` (默认 0.0.0.0)、`port` (默认 8000)、`cors_origins`、`log_level` (默认 INFO)、`llm_timeout` 字段
+    - 1.3: 在 `Configuration` 中实现 `cors_origins` 的 `field_validator`，以支持环境变量逗号分隔的字符串解析为列表
 
-- [x] Task 2: 扩展运行配置并接入 main.py
-    - 2.1: 在 `Configuration` 中新增 `host`、`port`、`cors_origins`、`log_level`、`llm_timeout` 字段
-    - 2.2: 为 `cors_origins` 增加逗号分隔字符串解析逻辑
-    - 2.3: 在 `Configuration.from_env` 中加入新增字段的环境变量映射
-    - 2.4: 在 `main.py` 中使用 `config.cors_origins` 配置 CORS
-    - 2.5: 在 `main.py` 中使用 `config.log_level` 配置日志 handler 级别
-    - 2.6: 在 `main.py` 的 uvicorn 启动段使用 `config.host`、`config.port`、`config.log_level`
+- [x] Task 2: 修正 main.py 使得服务使用最新的统一配置
+    - 2.1: 修改 `backend/src/main.py` 中的 `CORSMiddleware` 注册逻辑，使用 `config.cors_origins`
+    - 2.2: 调整 `logger.add` 的日志级别，使用 `config.log_level`
+    - 2.3: 在文件末尾的 `uvicorn.run` 调用中，使用 `config.host`、`config.port` 和 `config.log_level`
 
-- [x] Task 3: 实现 advanced 搜索后端
-    - 3.1: 在 `dispatch_search` 的 handler map 中注册 `advanced`
-    - 3.2: 新增 `_search_advanced` 聚合 Tavily、DuckDuckGo、SearXNG、Perplexity 搜索结果
-    - 3.3: 为 `_search_advanced` 增加单后端异常隔离和 notices 汇总
-    - 3.4: 保持 `prepare_research_context` 和现有搜索后端行为不变
+- [ ] Task 3: 实现 Advanced 聚合搜索策略
+    - 3.1: 在 `backend/src/services/search.py` 中新增 `_search_advanced` 处理器
+    - 3.2: 隔离并聚合调用 `_search_tavily`、`_search_ddg`、`_search_searxng`、`_search_perplexity`，捕获异常并整理 notices 与合并结果
+    - 3.3: 调整 `dispatch_search`，当配置的后端为 `SearchAPI.ADVANCED` 时，正确路由至 `_search_advanced`
 
-- [x] Task 4: 创建后端测试 harness 基础结构
-    - 4.1: 创建 `backend/tests/conftest.py` 并加入 `backend/src` 导入路径
-    - 4.2: 创建 `backend/tests/unit/test_config.py` 覆盖配置 override、CORS 解析、数值环境变量转换
-    - 4.3: 创建 `backend/tests/unit/test_models.py` 覆盖 `merge_todos` 后写覆盖和顺序保持
-    - 4.4: 创建 `backend/tests/unit/test_search.py` 覆盖 advanced 搜索聚合行为
-    - 4.5: 创建 `backend/tests/integration/test_api.py` 覆盖 `/healthz` 和 `/research/stream` SSE 协议
-
-- [x] Task 5: 运行后端测试并修复问题
-    - 5.1: 在 `backend` 目录运行 `python -m pytest`
-    - 5.2: 如存在导入、依赖或断言失败，按最小改动修复
-    - 5.3: 重新运行测试确认通过
-    - 5.4: 检查实现是否仍符合 doc.md 的范围约束
+- [ ] Task 4: 编写基础测试用例文件
+    - 4.1: 新建 `backend/tests/conftest.py`，将 `backend/src` 动态插入至 `sys.path` 中
+    - 4.2: 新建 `backend/tests/unit/test_config.py`，验证配置重载、类型转换与 CORS 字符串的按逗号解析行为
+    - 4.3: 新建 `backend/tests/unit/test_models.py`，验证 `merge_todos` 的后写覆盖与顺序保持行为
+    - 4.4: 新建 `backend/tests/unit/test_search.py`，通过 monkeypatch mock 内置搜索方法，测试 `advanced` 聚合和隔离行为
+    - 4.5: 新建 `backend/tests/integration/test_api.py`，使用 `TestClient` 测试 `/healthz`，并 mock `DeepResearchAgent.astream` 测试 SSE 的基础事件流输出协议

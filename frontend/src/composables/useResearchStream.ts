@@ -1,8 +1,3 @@
-"""useResearchStream: SSE connection + state machine for the research workflow.
-
-Extracted from App.vue to keep the view component thin. Exposes reactive state
-plus the ``submit``/``cancel``/``reset`` operations.
-"""
 import { computed, onBeforeUnmount, reactive, ref } from "vue";
 
 import {
@@ -64,43 +59,6 @@ export function formatTaskStatus(status: string): string {
 }
 
 
-import {
-  runResearchStream,
-  type ResearchStreamEvent
-} from "./services/api";
-
-interface SourceItem {
-  title: string;
-  url: string;
-  snippet: string;
-  raw: string;
-}
-
-interface ToolCallLog {
-  eventId: number;
-  agent: string;
-  tool: string;
-  parameters: Record<string, unknown>;
-  result: string;
-  noteId: string | null;
-  notePath: string | null;
-  timestamp: number;
-}
-
-interface TodoTaskView {
-  id: number;
-  title: string;
-  intent: string;
-  query: string;
-  status: string;
-  summary: string;
-  sourcesSummary: string;
-  sourceItems: SourceItem[];
-  notices: string[];
-  noteId: string | null;
-  notePath: string | null;
-  toolCalls: ToolCallLog[];
-}
 
 const form = reactive({
   topic: "",
@@ -124,24 +82,6 @@ const toolHighlight = ref(false);
 
 let currentController: AbortController | null = null;
 
-const searchOptions = [
-  "advanced",
-  "duckduckgo",
-  "tavily",
-  "perplexity",
-  "searxng"
-];
-
-const TASK_STATUS_LABEL: Record<string, string> = {
-  pending: "待执行",
-  in_progress: "进行中",
-  completed: "已完成",
-  skipped: "已跳过"
-};
-
-function formatTaskStatus(status: string): string {
-  return TASK_STATUS_LABEL[status] ?? status;
-}
 
 const totalTasks = computed(() => todoTasks.value.length);
 const completedTasks = computed(() =>
@@ -548,22 +488,49 @@ const submit = async () => {
             return;
           }
 
-          const textCandidates = [
-            payload.latest_sources,
-            payload.sources_summary,
-            payload.raw_context
-          ];
-          const latestText = textCandidates
-            .map((value) => (typeof value === "string" ? value.trim() : ""))
-            .find((value) => value);
+          // Prefer structured array from backend (latest_sources)
+          const structuredSources = Array.isArray(payload.latest_sources)
+            ? (payload.latest_sources as Record<string, unknown>[])
+                .map((s) => ({
+                  title:
+                    typeof s.title === "string" ? s.title.trim() : "",
+                  url:
+                    typeof s.url === "string" ? s.url.trim() : "",
+                  snippet:
+                    typeof s.snippet === "string" ? s.snippet.trim() : "",
+                  raw: ""
+                }))
+                .filter((s) => s.title || s.url)
+            : null;
 
-          if (latestText) {
-            task.sourcesSummary = latestText;
-            task.sourceItems = parseSources(latestText);
+          if (structuredSources && structuredSources.length) {
+            task.sourceItems = structuredSources;
+            task.sourcesSummary =
+              typeof payload.raw_context === "string"
+                ? payload.raw_context.trim()
+                : "";
             if (activeTaskId.value === task.id) {
               pulse(sourcesHighlight);
             }
             progressLogs.value.push(`已更新任务来源：${task.title}`);
+          } else {
+            // Fallback: parse text-based formats
+            const textCandidates = [
+              payload.sources_summary,
+              payload.raw_context
+            ];
+            const latestText = textCandidates
+              .map((value) => (typeof value === "string" ? value.trim() : ""))
+              .find((value) => value);
+
+            if (latestText) {
+              task.sourcesSummary = latestText;
+              task.sourceItems = parseSources(latestText);
+              if (activeTaskId.value === task.id) {
+                pulse(sourcesHighlight);
+              }
+              progressLogs.value.push(`已更新任务来源：${task.title}`);
+            }
           }
 
           if (typeof payload.backend === "string") {
@@ -709,9 +676,75 @@ const startNewResearch = () => {
   form.searchApi = "";
 };
 
-onBeforeUnmount(() => {
-  if (currentController) {
-    currentController.abort();
-    currentController = null;
-  }
-});
+export {
+  form,
+  loading,
+  error,
+  progressLogs,
+  logsCollapsed,
+  isExpanded,
+  todoTasks,
+  activeTaskId,
+  reportMarkdown,
+  summaryHighlight,
+  sourcesHighlight,
+  reportHighlight,
+  toolHighlight,
+  totalTasks,
+  completedTasks,
+  currentTask,
+  currentTaskSources,
+  currentTaskSummary,
+  currentTaskTitle,
+  currentTaskIntent,
+  currentTaskQuery,
+  currentTaskNoteId,
+  currentTaskNotePath,
+  currentTaskToolCalls,
+  formatToolParameters,
+  formatToolResult,
+  copyNotePath,
+  submit,
+  cancelResearch,
+  goBack,
+  startNewResearch
+};
+
+export function useResearchStream() {
+  return {
+    form,
+    loading,
+    error,
+    progressLogs,
+    logsCollapsed,
+    isExpanded,
+    todoTasks,
+    activeTaskId,
+    reportMarkdown,
+    summaryHighlight,
+    sourcesHighlight,
+    reportHighlight,
+    toolHighlight,
+    searchOptions,
+    TASK_STATUS_LABEL,
+    totalTasks,
+    completedTasks,
+    currentTask,
+    currentTaskSources,
+    currentTaskSummary,
+    currentTaskTitle,
+    currentTaskIntent,
+    currentTaskQuery,
+    currentTaskNoteId,
+    currentTaskNotePath,
+    currentTaskToolCalls,
+    formatTaskStatus,
+    formatToolParameters,
+    formatToolResult,
+    copyNotePath,
+    submit,
+    cancelResearch,
+    goBack,
+    startNewResearch
+  };
+}

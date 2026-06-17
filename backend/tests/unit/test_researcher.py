@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from config import Configuration
-from models import TodoItem
-from services.researcher import _reflect
+from src.config import Configuration
+from src.models import TodoItem
+from src.services.researcher import _reflect
 
 
 # ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ class FakeLLM:
 @pytest.mark.asyncio
 async def test_reflect_parses_sufficient_json(monkeypatch: pytest.MonkeyPatch) -> None:
     """Valid JSON with is_sufficient=True is parsed correctly."""
-    from llm import build_chat_model
+    from src.llm import build_chat_model
     monkeypatch.setattr(
         "services.researcher.build_chat_model",
         lambda cfg: FakeLLM(make_reflection_json(True)),
@@ -54,7 +54,7 @@ async def test_reflect_parses_sufficient_json(monkeypatch: pytest.MonkeyPatch) -
 @pytest.mark.asyncio
 async def test_reflect_parses_insufficient_json(monkeypatch: pytest.MonkeyPatch) -> None:
     """Valid JSON with is_sufficient=False returns follow_up_query."""
-    from llm import build_chat_model
+    from src.llm import build_chat_model
     monkeypatch.setattr(
         "services.researcher.build_chat_model",
         lambda cfg: FakeLLM(
@@ -71,7 +71,7 @@ async def test_reflect_parses_insufficient_json(monkeypatch: pytest.MonkeyPatch)
 @pytest.mark.asyncio
 async def test_reflect_fallback_on_bad_json(monkeypatch: pytest.MonkeyPatch) -> None:
     """Non-JSON output defaults to is_sufficient=True."""
-    from llm import build_chat_model
+    from src.llm import build_chat_model
     monkeypatch.setattr(
         "services.researcher.build_chat_model",
         lambda cfg: FakeLLM("just some rambling text, not valid JSON"),
@@ -85,7 +85,7 @@ async def test_reflect_fallback_on_bad_json(monkeypatch: pytest.MonkeyPatch) -> 
 @pytest.mark.asyncio
 async def test_reflect_fallback_on_llm_exception(monkeypatch: pytest.MonkeyPatch) -> None:
     """If LLM call raises, default to sufficient and don't crash."""
-    from llm import build_chat_model
+    from src.llm import build_chat_model
 
     class ExplodingLLM:
         async def ainvoke(self, messages):

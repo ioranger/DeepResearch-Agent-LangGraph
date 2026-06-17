@@ -7,9 +7,9 @@ from typing import Any
 
 from langchain_core.runnables import RunnableConfig
 
-from config import Configuration
-from models import ResearchTaskState, TodoItem
-from services.researcher import iterative_research
+from src.config import Configuration
+from src.models import ResearchTaskState, TodoItem
+from src.services.researcher import iterative_research
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 def build_summary_prompt(research_topic: str, task: TodoItem, context: str) -> str:
     """Construct the user prompt for the summarizer LLM call (single-pass)."""
-    from services.notes import build_note_guidance
+    from src.services.notes import build_note_guidance
 
     note_guidance = build_note_guidance(task)
     return (

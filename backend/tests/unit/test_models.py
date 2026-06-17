@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from models import TodoItem, merge_todos
+from src.models import TodoItem, merge_todos
 
 
 def test_merge_todos_overwrites_same_id_and_preserves_order() -> None:
