@@ -189,6 +189,7 @@ def create_app(config: Configuration | None = None) -> FastAPI:
                 logger.exception("Streaming research failed")
                 error_payload = {"type": "error", "detail": str(exc)}
                 yield f"data: {json.dumps(error_payload, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
         return StreamingResponse(
             event_iterator(),

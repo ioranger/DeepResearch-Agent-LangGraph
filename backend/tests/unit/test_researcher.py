@@ -40,7 +40,7 @@ async def test_reflect_parses_sufficient_json(monkeypatch: pytest.MonkeyPatch) -
     """Valid JSON with is_sufficient=True is parsed correctly."""
     from src.llm import build_chat_model
     monkeypatch.setattr(
-        "services.researcher.build_chat_model",
+        "src.services.researcher.build_chat_model",
         lambda cfg: FakeLLM(make_reflection_json(True)),
     )
     task = TodoItem(id=1, title="t", intent="i", query="q")
@@ -56,7 +56,7 @@ async def test_reflect_parses_insufficient_json(monkeypatch: pytest.MonkeyPatch)
     """Valid JSON with is_sufficient=False returns follow_up_query."""
     from src.llm import build_chat_model
     monkeypatch.setattr(
-        "services.researcher.build_chat_model",
+        "src.services.researcher.build_chat_model",
         lambda cfg: FakeLLM(
             make_reflection_json(False, follow_up="deeper search terms", reasoning="not enough data")
         ),
@@ -73,7 +73,7 @@ async def test_reflect_fallback_on_bad_json(monkeypatch: pytest.MonkeyPatch) -> 
     """Non-JSON output defaults to is_sufficient=True."""
     from src.llm import build_chat_model
     monkeypatch.setattr(
-        "services.researcher.build_chat_model",
+        "src.services.researcher.build_chat_model",
         lambda cfg: FakeLLM("just some rambling text, not valid JSON"),
     )
     task = TodoItem(id=1, title="t", intent="i", query="q")
@@ -92,7 +92,7 @@ async def test_reflect_fallback_on_llm_exception(monkeypatch: pytest.MonkeyPatch
             raise RuntimeError("boom")
 
     monkeypatch.setattr(
-        "services.researcher.build_chat_model",
+        "src.services.researcher.build_chat_model",
         lambda cfg: ExplodingLLM(),
     )
     task = TodoItem(id=1, title="t", intent="i", query="q")

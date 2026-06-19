@@ -57,7 +57,7 @@ def test_plan_node_structured_output(monkeypatch: pytest.MonkeyPatch) -> None:
 
     payload = '{"tasks": [{"title": "背景梳理", "intent": "了解背景", "query": "test background"}]}'
     monkeypatch.setattr(
-        "services.planner.build_chat_model",
+        "src.services.planner.build_chat_model",
         lambda cfg: FakeLLM(content=payload, supports_structured=True),
     )
 
@@ -77,7 +77,7 @@ def test_plan_node_fallback_on_unsupported(monkeypatch: pytest.MonkeyPatch) -> N
     # Provide a raw JSON string that manual parser can handle
     raw_json = '{"tasks": [{"title": "手动解析任务", "intent": "测试回退", "query": "fallback query"}]}'
     monkeypatch.setattr(
-        "services.planner.build_chat_model",
+        "src.services.planner.build_chat_model",
         lambda cfg: FakeLLM(content=raw_json, supports_structured=False),
     )
 
@@ -94,7 +94,7 @@ def test_plan_node_creates_fallback_when_empty(monkeypatch: pytest.MonkeyPatch) 
     from src.services.planner import plan_node
 
     monkeypatch.setattr(
-        "services.planner.build_chat_model",
+        "src.services.planner.build_chat_model",
         lambda cfg: FakeLLM(content='{"tasks": []}', supports_structured=True),
     )
 
